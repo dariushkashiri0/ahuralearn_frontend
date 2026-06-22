@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, Pause, Volume2, Maximize, Loader } from 'lucide-react';
+import { Play, Pause, Maximize, Loader } from 'lucide-react';
 import { saveVideoProgress } from '../../../api/course/course';
 import styles from './VideoPlayer.module.css';
 
@@ -14,11 +14,9 @@ const formatTime = (timeInSeconds) => {
 export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete }) {
   const { courseId } = useParams();
 
-  // 获取原生的 <video> DOM 元素，以便我们可以操作它的时间控制（断点续播）
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
-  // 记录这个视频是否已经标记完成过了，防止每次 70% 都重复发送请求
   const isCompletedRef = useRef(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -28,10 +26,9 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
   const [duration, setDuration] = useState(0);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
 
-  // ----- 断点续播逻辑 -----
-  // 当传入进来的 lesson (也就是视频变了) 或是传入的 lastWatchTime 有变更时执行
+  // ----- Resume Playback -----
   useEffect(() => {
-    // 重置状态
+    
     isCompletedRef.current = false;
     setIsFinished(false);
     setIsPlaying(false);
@@ -40,12 +37,11 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
 
     const videoEl = videoRef.current;
     if (videoEl && lastWatchTime > 0) {
-      // 通过设置 currentTime 来实现断点续播
       videoEl.currentTime = lastWatchTime;
     }
   }, [lesson, lastWatchTime]);
 
-  // 定时器：每 15s 发送一次进度记录
+  // send record request per 15s
   useEffect(() => {
     let intervalId;
     if (isPlaying && courseId && lesson?.id) {
@@ -54,7 +50,7 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
           setIsSaving(true);
           const currTime = videoRef.current?.currentTime || 0;
           const firstFinish = await saveVideoProgress(Number(courseId), lesson.id, Math.floor
-            (currTime)); //实则为sectionId
+            (currTime));
 
           if (firstFinish && !isFinished) {
             setIsFinished(true);
@@ -105,7 +101,6 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
     }
   };
 
-  // 依赖 isFinished 状态来通知父组件课时完成 实现用户学习状态的前端更新
   useEffect(() => {
     if (isFinished && !isCompletedRef.current) {
       isCompletedRef.current = true;
@@ -135,12 +130,11 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
           onPlaying={() => { setIsPlaying(true); setIsVideoLoading(false); }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          poster={lesson.thumbnailUrl} // 如果有封面可以放这里
+          poster={lesson.thumbnailUrl}
         />
 
-        {/* 自定义控件，进度条在上方，按钮在下方 */}
         <div className={styles.controlsWrapper}>
-          {/* 上半部分：进度条 */}
+          
           <div className={styles.progressBarContainer}>
             <div
               className={styles.progressBarFill}
@@ -157,7 +151,6 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
             />
           </div>
 
-          {/* 下半部分：播放控制和时间 */}
           <div className={styles.controlsRow}>
             <button className={styles.controlButton} onClick={togglePlay}>
               {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
@@ -169,9 +162,6 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
 
             <div style={{ flex: 1 }}></div>
 
-            <button className={styles.controlButton}>
-              <Volume2 size={20} />
-            </button>
             <button className={styles.controlButton} onClick={toggleFullscreen}>
               <Maximize size={20} />
             </button>
@@ -179,7 +169,6 @@ export default function VideoPlayer({ lesson, lastWatchTime, onLessonComplete })
         </div>
       </div>
 
-      {/* 底部保存提示反馈 */}
       <div style={{ minHeight: "24px" }}>
         {isSaving && (
           <div className={styles.savingIndicator}>

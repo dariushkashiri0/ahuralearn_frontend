@@ -6,7 +6,6 @@ import styles from './LessonTabs.module.css';
 function QuizOverviewSection({ sectionId, navigate }) {
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!sectionId) return;
@@ -14,24 +13,20 @@ function QuizOverviewSection({ sectionId, navigate }) {
     let isMounted = true;
     const fetchOverview = async () => {
       setLoading(true);
-      setError('');
       try {
         const res = await getQuizOverview(sectionId);
         if (isMounted) {
-            // Suppose res.data contains the QuizOverviewVO
             setOverview(res);
         }
       } catch (err) {
         if (isMounted) {
             console.error("Failed to load quiz overview", err);
-            // Mock data fallback for missing backend implementation based on docs
             setOverview({
                 isAttempted: false,
                 earnedScore: null,
-                totalScore: 100, // typical default
+                totalScore: 50,
                 commitTime: null
             });
-            // setError('Failed to load quiz overview.');
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -83,7 +78,6 @@ export default function LessonTabs({ title, description, sectionId }) {
   const [activeTab, setActiveTab] = useState('Description');
   const navigate = useNavigate();
 
-  // 根据设计图，有 Description 和 Post-class Quiz
   const tabs = ['Description', 'Post-class Quiz'];
 
   const handleTabClick = (tabName) => {
