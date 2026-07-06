@@ -50,10 +50,10 @@ export default function AcademicAssistant() {
   const [citation, setCitation] = useState({ author: '', date: '', title: '', publisher: '', source: '' });
   const queryRef = useRef(null);
 
-  const runAnalysis = (queryText) => {
+  const runAnalysis = (queryText, options) => {
     setLoading(true);
     setError('');
-    analyzeQuery(queryText)
+    analyzeQuery(queryText, options)
       .then((res) => {
         // request.js already unwraps the Result envelope → res is the AnalysisVO
         const data = res ?? null;
@@ -68,6 +68,7 @@ export default function AcademicAssistant() {
 
   const handleSubmit = () => {
     if (!query.trim()) return;
+    setCitationOpen(false); // asking the assistant dismisses the citation form (one result panel)
     runAnalysis(query);
   };
 
@@ -99,7 +100,7 @@ export default function AcademicAssistant() {
     const composed = `Generate a full citation for the following source in APA, MLA, and Harvard styles. `
       + `Clearly label each style on its own line. Source details — ${details}.`;
     setCitationOpen(false);
-    runAnalysis(composed);
+    runAnalysis(composed, { plain: true });
   };
 
   return (

@@ -5,7 +5,7 @@ import TopNav from '../../components/common/TopNav';
 import Footer from '../../components/common/Footer';
 import SummaryPanel from '../../components/aiSummarization/SummaryPanel';
 import ChatPanel from '../../components/aiSummarization/ChatPanel';
-import { fetchDocuments, fetchSummary, regenerateSummary, sendSummaryChat } from '../../api/ai/aiService';
+import { fetchDocuments, fetchSummary, regenerateSummary, sendSummaryChat, fetchChatHistory } from '../../api/ai/aiService';
 import styles from './aiSummarization.module.css';
 
 const GREETING = { role: 'ai', text: 'Hello! I am your AI tutor. How can I help you with this document today?' };
@@ -75,7 +75,8 @@ export default function AiSummarization() {
   const activeDoc = documents.find((d) => d.id === String(activeId)) ?? documents[0] ?? null;
   const activeDocId = activeDoc?.id ?? null;
 
-  // Load the selected document's summary; reset the chat for the new document.
+  // Load the selected document's summary; reset the chat for the new document and
+  // restore its stored conversation from the backend (the tutor's memory).
   useEffect(() => {
     if (activeDocId == null) return;
     setMessages([GREETING]);
@@ -84,6 +85,18 @@ export default function AiSummarization() {
     setSummaryMessage('');
     setSummaryLoading(true);
     let cancelled = false;
+    fetchChatHistory(activeDocId)
+      .then((res) => {
+        // request.js unwraps the Result envelope → res is ChatMessageVo[] (oldest first)
+        const history = Array.isArray(res) ? res : [];
+        if (!cancelled && history.length) {
+          setMessages([
+            GREETING,
+            ...history.map((m) => ({ role: m.role === 'user' ? 'user' : 'ai', text: m.text })),
+          ]);
+        }
+      })
+      .catch(() => { /* no stored history yet → keep just the greeting */ });
     fetchSummary(activeDocId)
       .then((res) => {
         if (cancelled) return;

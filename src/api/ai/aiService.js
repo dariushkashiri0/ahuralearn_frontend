@@ -91,13 +91,23 @@ export const sendSummaryChat = ({ documentId, userMessage }) => {
 };
 
 /**
+ * Stored tutor conversation for a document (oldest first), used to restore the
+ * chat after a page refresh. Backend: GET /api/assistant/chat/history.
+ * @param {string|number} documentId
+ */
+export const fetchChatHistory = (documentId) => {
+  return request.get('/api/assistant/chat/history', { params: { documentId } });
+};
+
+/**
  * Real-time Academic Assistant: send a free-form query, get structured analysis.
  * Backend: POST /api/assistant/analyze → { inquiry, definition, explanation, keyPoints, sources }.
  * @param {string} query
  */
-export const analyzeQuery = (query) => {
-  // LLM analysis can be slow → allow up to 2 min instead of the 10s default
-  return request.post('/api/assistant/analyze', { query }, { timeout: 120000 });
+export const analyzeQuery = (query, { plain = false } = {}) => {
+  // LLM analysis can be slow → allow up to 2 min instead of the 10s default.
+  // plain=true (e.g. Citation Generator) returns the answer as-is, no analysis structure.
+  return request.post('/api/assistant/analyze', { query, plain }, { timeout: 120000 });
 };
 
 // GXC

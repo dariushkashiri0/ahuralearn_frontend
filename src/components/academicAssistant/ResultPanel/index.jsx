@@ -8,8 +8,12 @@ const VISIBLE_SOURCES = 2;
 export default function ResultPanel({ result }) {
   const [showAllSources, setShowAllSources] = useState(false);
   const sources = result.sources || [];
+  const keyPoints = Array.isArray(result.keyPoints) ? result.keyPoints : [];
   const visibleSources = showAllSources ? sources : sources.slice(0, VISIBLE_SOURCES);
   const hiddenCount = sources.length - VISIBLE_SOURCES;
+  // A plain reply (greeting, generated citation, …) has only the message — no definition,
+  // key points or sources — so show it as a clean block without the "Explanation" header.
+  const plainOnly = !result.definition && keyPoints.length === 0 && sources.length === 0;
 
   return (
     <div className={styles.panel}>
@@ -32,7 +36,9 @@ export default function ResultPanel({ result }) {
 
       {result.explanation && (
         <section className={styles.section}>
-          <div className={`${styles.sectionHead} ${styles.purple}`}><Activity size={15} color="#7c3aed" /><span>Explanation</span></div>
+          {!plainOnly && (
+            <div className={`${styles.sectionHead} ${styles.purple}`}><Activity size={15} color="#7c3aed" /><span>Explanation</span></div>
+          )}
           <p className={styles.sectionBody} style={{ whiteSpace: 'pre-wrap' }}>{result.explanation}</p>
         </section>
       )}
