@@ -131,7 +131,8 @@ export const deleteDocument = (documentId) => {
  * @param {string|number} documentId
  */
 export const fetchSummary = (documentId) => {
-  return request.get(`/api/summarization/${documentId}`);
+  // LLM summarization can take 20s+, so override the short default axios timeout
+  return request.get(`/api/summarization/${documentId}`, { timeout: 120000 });
 };
 
 /**
@@ -149,7 +150,17 @@ export const regenerateSummary = (documentId) => {
  * @param {object} payload { documentId, userMessage }
  */
 export const sendSummaryChat = ({ documentId, userMessage }) => {
-  return request.post('/api/assistant/chat', { message: userMessage, documentId });
+  // LLM tutor reply can be slow → allow up to 2 min instead of the 10s default
+  return request.post('/api/assistant/chat', { message: userMessage, documentId }, { timeout: 120000 });
+};
+
+/**
+ * Stored tutor conversation for a document (oldest first), used to restore the
+ * chat after a page refresh. Backend: GET /api/assistant/chat/history.
+ * @param {string|number} documentId
+ */
+export const fetchChatHistory = (documentId) => {
+  return request.get('/api/assistant/chat/history', { params: { documentId } });
 };
 
 /**
@@ -157,8 +168,10 @@ export const sendSummaryChat = ({ documentId, userMessage }) => {
  * Backend: POST /api/assistant/analyze → { inquiry, definition, explanation, keyPoints, sources }.
  * @param {string} query
  */
-export const analyzeQuery = (query) => {
-  return request.post('/api/assistant/analyze', { query });
+export const analyzeQuery = (query, { plain = false } = {}) => {
+  // LLM analysis can be slow → allow up to 2 min instead of the 10s default.
+  // plain=true (e.g. Citation Generator) returns the answer as-is, no analysis structure.
+  return request.post('/api/assistant/analyze', { query, plain }, { timeout: 120000 });
 };
 
 // GXC
